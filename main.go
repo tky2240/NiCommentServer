@@ -3,12 +3,16 @@ package main
 import (
 	"log"
 	"net/http"
+	"nicomment/setting"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 )
 
+var listen = setting.LoadSettings("./setting.yml")
+
 // 接続されるクライアント
-var clients = make(map[string]*websocket.Conn)
+var clients = make(map[string]*websocket.Conn, 0)
 
 // メッセージブロードキャストチャネル
 var broadcast = make(chan Comment)
@@ -19,16 +23,27 @@ var upgrader = websocket.Upgrader{
 
 		origin := r.Header.Get("Origin")
 		print(origin)
-		return origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000" || origin == ""
+		isAllowOrigin := false
+		for _, allowOrigin := range listen.AllowOrigins {
+			if allowOrigin == origin {
+				isAllowOrigin = true
+				break
+			}
+		}
+		return isAllowOrigin
 	},
 }
 
 // メッセージ用構造体
 type Comment struct {
-	UserID         string `json:"UserID"`
-	Username       string `json:"UserName"`
-	Message        string `json:"Message"`
-	IsFixedComment bool   `json:"IsFixedComment"`
+	UserID         string  `json:"UserID"`
+	Username       string  `json:"UserName"`
+	Message        string  `json:"Message"`
+	IsFixedComment bool    `json:"IsFixedComment"`
+	R              byte    `json:"R"`
+	G              byte    `json:"G"`
+	B              byte    `json:"B"`
+	A              float64 `json:"A"`
 }
 
 type NiCommentClient struct {
@@ -38,16 +53,13 @@ type NiCommentClient struct {
 
 func main() {
 	mux := http.NewServeMux()
-	// ファイルサーバー
-	fs := http.FileServer(http.Dir("./public"))
-	mux.Handle("/", fs)
 
 	// WebSocket
 	mux.HandleFunc("/ws", handleConnections)
 	mux.HandleFunc("/api/close", closeWebSocket)
 	go handleMessages()
 
-	err := http.ListenAndServe(":8008", mux)
+	err := http.ListenAndServe(listen.IP+":"+strconv.Itoa(listen.Port), mux)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

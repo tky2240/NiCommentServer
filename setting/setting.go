@@ -7,8 +7,9 @@ import (
 )
 
 type Listen struct {
-	IP   string `yaml:"IP"`
-	Port int    `yaml:"Port"`
+	IP           string   `yaml:"IP"`
+	Port         int      `yaml:"Port"`
+	AllowOrigins []string `yaml:"AllowOrigins"`
 }
 
 func LoadSettings(yamlPath string) Listen {

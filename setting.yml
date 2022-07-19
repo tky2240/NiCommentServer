@@ -1,3 +1,5 @@
-Listen:
-  IP: "127.0.0.1"
-  Port: "3777"
+IP: "localhost"
+Port: 8008
+AllowOrigins:
+  - ""
+  - "http://localhost:3000"
